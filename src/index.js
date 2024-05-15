@@ -39,7 +39,7 @@ app.post("/signup",async(req, res)=>{
     });
 
     await user.save();
-    res.status(201).json({success: true, message: "Sign up successfull!"})
+    res.status(201).json({success: true, messageSuccess: "Sign up successfull!"})
   } catch (err) {
       res.status(500).json({"status":err})
   }
