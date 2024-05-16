@@ -59,7 +59,7 @@ app.post("/login",async(req, res)=>{
       const user = { id: check._id, userName: check.userName }; // Modify this to include necessary user information
       res.status(200).json({ success: true, message: "Successfully logged in", user });
     } else {
-      res.status(401).end();
+      res.status(401).json({success: false, message: "Incorrect email or password."}).end();
     }
 }catch (err) {
   res.status(500).json({ success: false, message: "Internal server error" });
