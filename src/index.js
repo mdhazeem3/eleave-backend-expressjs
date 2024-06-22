@@ -202,6 +202,9 @@ app.get('/api/userById/:userId', async (req, res) => {
   }
 }),
 
+
+//LEAVES API//
+
 app.get('/api/leavetype', async (req, res) =>{
   try{
     const leaveType = await LeaveType.find();
@@ -214,8 +217,6 @@ app.get('/api/leavetype', async (req, res) =>{
 }),
 
 app.put('/api/user/leaves', async (req, res) => {
-
-
   const userId = req.body.userId;
   const leaveDetails = req.body.leaveDetails;
 
@@ -230,6 +231,22 @@ app.put('/api/user/leaves', async (req, res) => {
     res.send(user);
   } catch (err) {
     res.status(500).send(err);
+  }
+}),
+
+app.get('/api/getUserLeaves/:userId', async(req,res)=>{
+  const userId = req.params.userId;
+  const user = await User.findById(userId);
+
+  try{ 
+    if(!user){
+      res.status(404).json({message: "User not found"});
+    }
+
+    res.status(200).json({Leaves: user.leaves});
+
+  }catch(err){
+    console.log(err);
   }
 })
 
