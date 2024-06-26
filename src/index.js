@@ -3,7 +3,7 @@ const cors= require('cors')
 const port = 3000
 const path = require("path")
 const bcrypt = require("bcrypt")
-const {User, LeaveType} = require("./config")
+const {User, LeaveType, leaveApplication} = require("./config")
 // const Leave = require("./config")
 const session = require('express-session');
 const app = express()
@@ -247,6 +247,91 @@ app.get('/api/getUserLeaves/:userId', async(req,res)=>{
 
   }catch(err){
     console.log(err);
+  }
+}),
+
+//LEAVES APPLICATION APIs//
+
+app.post('/api/leaveApplication', async(req, res)=>{
+  const { userId, appliedLeaveType, fromDate, toDate, reason } = req.body;
+  const leaveDays = Math.ceil((new Date(toDate) - new Date(fromDate)) / (1000 * 60 * 60 * 24)) + 1;
+
+  try{
+    //Find user by ID
+    const user = await User.findById(userId)
+    if(!user) return res.status(404).json({message: 'User not found.'});
+
+    // Find the specific leave type balance
+    const leaveBalance = user.leaves.find(leaves => leaves.type === appliedLeaveType)
+    if(!leaveBalance) return res.status(404).json({message:`${appliedLeaveType} not found for this user.`});
+
+    if(leaveBalance.total < leaveDays){
+      return res.status(400).json({message: `Not enough ${appliedLeaveType} balance.`});
+    }
+
+    // Assuming we still want to save the leave application separately
+    const newLeave = new leaveApplication({ userId, appliedLeaveType, fromDate, toDate, reason });
+    const savedLeave = await newLeave.save();
+
+    // Update the user's leave balance
+    leaveBalance.total -= leaveDays;
+    await user.save();
+    
+    res.status(200).json(savedLeave);
+  }catch(err){
+    res.status(400).json({message: err.message})
+  }
+}),
+
+app.get('/api/leave-application-list', async(req,res)=>{
+  try{
+    const leaveApplicationList = await leaveApplication.find();
+    res.json(leaveApplicationList);
+  }catch(err){
+    res.status(400).json({message: err.message})
+  }
+}),
+
+app.put('/api/approve-leave', async(req,res)=>{
+  const {leaveId} = req.body
+
+  try{
+    const leave = await leaveApplication.findById(leaveId);
+
+    if(!leave) return res.status(404).json({message: 'Leave application not found.'});
+
+    if(leave.status === 'Approved'){
+      res.status(400).json({message: 'This leave application had already been approved.'});
+    }else if(leave.status === 'Rejected'){
+      res.status(400).json({message: 'This leave application had already been rejected.'});
+    }else{
+      leave.status = 'Approved';
+      const updatedLeave = await leave.save()
+      res.status(200).json({status: true ,message: 'Leave application approved.', leave: updatedLeave})
+    }
+  }catch(err){
+    res.status(400).json({message: err.message})
+  }
+}),
+
+app.put('/api/reject-leave', async(req,res)=>{
+  const {leaveId} = req.body
+
+  try{
+    const leave = await leaveApplication.findById(leaveId);
+    if(!leave) return res.status(404).json({message: 'Leave application not found.'});
+
+    if(leave.status === 'Approved'){
+      res.status(400).json({message: 'This leave application had already been approved.'});
+    }else if(leave.status === 'Rejected'){
+      res.status(400).json({message: 'This leave application had already been rejected.'});
+    }else{
+      leave.status = 'Rejected';
+      const updatedLeave = await leave.save()
+      res.status(200).json({status: false ,message: 'Leave application rejected.', leave: updatedLeave})
+    }
+  }catch(err){
+    res.status(400).json({message: err.message})
   }
 })
 

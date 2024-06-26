@@ -39,6 +39,15 @@ const LoginSchema = new mongoose.Schema({
       ]
 });
 
+//Leave Application Schema
+const LeaveSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', requried: true },
+  appliedLeaveType: { type: String, required: true },
+  fromDate: { type: Date, required: true },
+  toDate: { type: Date, required: true },
+  reason: { type: String, required: true },
+  status: { type: String, default: 'Pending' },
+})
 
 //Leave Type Schema
 const leaveTypeSchema = new mongoose.Schema({
@@ -52,5 +61,6 @@ const leaveTypeSchema = new mongoose.Schema({
 
 const User = new mongoose.model("users", LoginSchema);
 const LeaveType = new mongoose.model("leave-types", leaveTypeSchema);
+const leaveApplication = new mongoose.model("applied-leaves", LeaveSchema)
 
-module.exports = { User, LeaveType };
+module.exports = { User, LeaveType, leaveApplication };
